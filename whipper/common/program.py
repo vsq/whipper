@@ -248,28 +248,25 @@ class Program:
         template = re.sub(r'%(\w)', r'%(\1)s', template)
         return os.path.join(outdir, template % v)
 
-    def getCDDB(self, cddbdiscid):
+    def craftMusicBrainzFromFreeDB(self, freedb_data):
         """
-        @param cddbdiscid: list of id, tracks, offsets, seconds
-
-        @rtype: str
+        Create MusicBrainz-sytle metadata from a FreeDB entry.
         """
-        # FIXME: convert to nonblocking?
-        import CDDB
-        try:
-            code, md = CDDB.query(cddbdiscid)
-            logger.debug('CDDB query result: %r, %r', code, md)
-            if code == 200:
-                return md['title']
+        disc = mbngs.DiscMetadata()
 
-        except IOError, e:
-            # FIXME: for some reason errno is a str ?
-            if e.errno == 'socket error':
-                self._stdout.write("Warning: network error: %r\n" % (e, ))
-            else:
-                raise
+        disc.artist = disc.sortName = freedb_data.get('artist')
+        disc.release = str(freedb_data.get('year', '0000'))
+        disc.title = disc.releaseTitle = freedb_data.get('title')
 
-        return None
+        tracks = []
+        for track_title in freedb_data.get('tracks', []):
+            track = mbngs.TrackMetadata()
+            track.artist = track.sortName = disc.artist
+            track.title = track_title
+            tracks.append(track)
+        disc.tracks = tracks
+
+        return disc
 
     def getMusicBrainz(self, ittoc, mbdiscid, release=None, country=None,
                        prompt=False):
@@ -455,7 +452,9 @@ class Program:
             if self.metadata.release is not None:
                 tags['DATE'] = self.metadata.release
 
-            if number > 0:
+            has_mbinfo = (mbidTrack and mbidTrackArtist and mbidAlbum
+                          and mbidTrackAlbum and mbDiscId)
+            if number > 0 and has_mbinfo:
                 tags['MUSICBRAINZ_TRACKID'] = mbidTrack
                 tags['MUSICBRAINZ_ARTISTID'] = mbidTrackArtist
                 tags['MUSICBRAINZ_ALBUMID'] = mbidAlbum
