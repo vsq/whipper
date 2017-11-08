@@ -441,17 +441,19 @@ Log files will log the path to tracks relative to this directory.
                                      e, tries)
 
                 if tries == MAX_TRIES:
-                    logger.critical('Giving up on track %d after %d times' % (
+                    logger.warning('Giving up on track %d after %d times' % (
                         number, tries))
-                    raise RuntimeError(
+                    logger.warning(
                         "track can't be ripped. "
                         "Rip attempts number is equal to 'MAX_TRIES'")
+                    return
                 if trackResult.testcrc == trackResult.copycrc:
                     sys.stdout.write('CRCs match for track %d\n' % number)
                 else:
-                    raise RuntimeError(
+                    logger.warning(
                         "CRCs did not match for track %d\n" % number
                     )
+                    return
 
                 sys.stdout.write(
                     'Peak level: {:.2%} \n'.format(trackResult.peak))
