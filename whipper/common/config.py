@@ -24,6 +24,7 @@ import os.path
 import shutil
 import tempfile
 import urllib
+from urlparse import urlparse
 
 from whipper.common import directory
 
@@ -72,21 +73,39 @@ class Config:
     def getboolean(self, section, option):
         return self._getter('boolean', section, option)
 
+    # musicbrainz section
+
+    def get_musicbrainz_server(self):
+        server = self.get('musicbrainz', 'server') or 'musicbrainz.org'
+        server_url = urlparse('//' + server)
+        if server_url.scheme != '' or server_url.path != '':
+            raise KeyError('Invalid MusicBrainz server: %s' % server)
+        return server
+
     # drive sections
 
     def setReadOffset(self, vendor, model, release, offset):
-        """
-        Set a read offset for the given drive.
+        """Set a read offset for the given drive.
 
         Strips the given strings of leading and trailing whitespace.
+
+        :param vendor:
+        :param model:
+        :param release:
+        :param offset:
+
         """
         section = self._findOrCreateDriveSection(vendor, model, release)
         self._parser.set(section, 'read_offset', str(offset))
         self.write()
 
     def getReadOffset(self, vendor, model, release):
-        """
-        Get a read offset for the given drive.
+        """Get a read offset for the given drive.
+
+        :param vendor:
+        :param model:
+        :param release:
+
         """
         section = self._findDriveSection(vendor, model, release)
 
@@ -97,10 +116,15 @@ class Config:
                 vendor, model, release))
 
     def setDefeatsCache(self, vendor, model, release, defeat):
-        """
-        Set whether the drive defeats the cache.
+        """Set whether the drive defeats the cache.
 
         Strips the given strings of leading and trailing whitespace.
+
+        :param vendor:
+        :param model:
+        :param release:
+        :param defeat:
+
         """
         section = self._findOrCreateDriveSection(vendor, model, release)
         self._parser.set(section, 'defeats_cache', str(defeat))

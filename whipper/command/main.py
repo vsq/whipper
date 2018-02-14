@@ -10,7 +10,7 @@ import whipper
 
 from whipper.command import cd, offset, drive, image, accurip, debug
 from whipper.command.basecommand import BaseCommand
-from whipper.common import common, directory
+from whipper.common import common, directory, config
 from whipper.extern.task import task
 from whipper.program.utils import eject_device
 
@@ -22,6 +22,14 @@ def main():
     # set user agent
     musicbrainzngs.set_useragent("whipper", whipper.__version__,
                                  "https://github.com/JoeLametta/whipper")
+
+    try:
+        server = config.Config().get_musicbrainz_server()
+    except KeyError, e:
+        sys.stderr.write('whipper: %s\n' % e.message)
+        sys.exit()
+
+    musicbrainzngs.set_hostname(server)
     # register plugins with pkg_resources
     distributions, _ = pkg_resources.working_set.find_plugins(
         pkg_resources.Environment([directory.data_path('plugins')])
@@ -30,20 +38,20 @@ def main():
     try:
         cmd = Whipper(sys.argv[1:], os.path.basename(sys.argv[0]), None)
         ret = cmd.do()
-    except SystemError, e:
+    except SystemError as e:
         sys.stderr.write('whipper: error: %s\n' % e)
         if (type(e) is common.EjectError and
                 cmd.options.eject in ('failure', 'always')):
             eject_device(e.device)
         return 255
-    except RuntimeError, e:
+    except RuntimeError as e:
         print(e)
         return 1
     except KeyboardInterrupt:
         return 2
-    except ImportError, e:
+    except ImportError as e:
         raise
-    except task.TaskException, e:
+    except task.TaskException as e:
         if isinstance(e.exception, ImportError):
             raise ImportError(e.exception)
         elif isinstance(e.exception, common.MissingDependencyException):
@@ -72,11 +80,11 @@ You can get help on subcommands by using the -h option to the subcommand.
     no_add_help = True
     subcommands = {
         'accurip': accurip.AccuRip,
-        'cd':      cd.CD,
-        'debug':   debug.Debug,
-        'drive':   drive.Drive,
-        'offset':  offset.Offset,
-        'image':   image.Image
+        'cd': cd.CD,
+        'debug': debug.Debug,
+        'drive': drive.Drive,
+        'offset': offset.Offset,
+        'image': image.Image
     }
 
     def add_arguments(self):

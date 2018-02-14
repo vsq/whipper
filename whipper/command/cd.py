@@ -37,7 +37,7 @@ gobject.threads_init()
 logger = logging.getLogger(__name__)
 
 
-SILENT = 1e-10
+SILENT = 0
 MAX_TRIES = 5
 
 DEFAULT_TRACK_TEMPLATE = u'%r/%A - %d/%t. %a - %n'
@@ -192,7 +192,7 @@ class _CD(BaseCommand):
             try:
                 self.program.result.cdparanoiaDefeatsCache = \
                     self.config.getDefeatsCache(*info)
-            except KeyError, e:
+            except KeyError as e:
                 logger.debug('Got key error: %r' % (e, ))
         self.program.result.artist = self.program.metadata \
             and self.program.metadata.artist \
@@ -239,7 +239,7 @@ relative to the directory of the disc files.
 All files will be created relative to the given output directory.
 Log files will log the path to tracks relative to this directory.
 """ % TEMPLATE_DESCRIPTION
-    formatter_class = argparse.ArgumentDefaultsHelpFormatter
+    formatter_class = argparse.RawTextHelpFormatter
 
     # Requires opts.record
     # Requires opts.device
@@ -360,8 +360,9 @@ Log files will log the path to tracks relative to this directory.
             else:
                 sys.stdout.write("output directory %s already exists\n" %
                                  dirname.encode('utf-8'))
-        print("creating output directory %s" % dirname.encode('utf-8'))
-        os.makedirs(dirname)
+        else:
+            print("creating output directory %s" % dirname.encode('utf-8'))
+            os.makedirs(dirname)
 
         # FIXME: turn this into a method
 
@@ -436,7 +437,7 @@ Log files will log the path to tracks relative to this directory.
                                                   len(self.itable.tracks),
                                                   extra))
                         break
-                    except Exception, e:
+                    except Exception as e:
                         logger.debug('Got exception %r on try %d',
                                      e, tries)
 
@@ -456,7 +457,7 @@ Log files will log the path to tracks relative to this directory.
                     return
 
                 sys.stdout.write(
-                    'Peak level: {:.2%} \n'.format(trackResult.peak))
+                    'Peak level: {}\n'.format(trackResult.peak))
 
                 sys.stdout.write(
                     'Rip quality: {:.2%}\n'.format(trackResult.quality))
@@ -465,9 +466,9 @@ Log files will log the path to tracks relative to this directory.
             if number == 0:
                 # HTOA goes on index 0 of track 1
                 # ignore silence in PREGAP
-                if trackResult.peak <= SILENT:
+                if trackResult.peak == SILENT:
                     logger.debug(
-                        'HTOA peak %r is below SILENT '
+                        'HTOA peak %r is equal to the SILENT '
                         'threshold, disregarding', trackResult.peak)
                     self.itable.setFile(1, 0, None,
                                         self.ittoc.getTrackStart(1), number)
